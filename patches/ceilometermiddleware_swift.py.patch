@@ -1,0 +1,44 @@
+From 7790f4b253f69b11507c945749e76eebc126d7c2 Mon Sep 17 00:00:00 2001
+From: Sudarshan Acharya <sudarshan.acharya@gmail.com>
+Date: Fri, 6 May 2016 04:06:46 +0000
+Subject: [PATCH] Adding response headers to sample metadata
+
+Metadata headers that are in the response header are
+captured and sent as part of the measuremant metadata.
+---
+ ceilometermiddleware/swift.py | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/ceilometermiddleware/swift.py b/ceilometermiddleware/swift.py
+index ba2db38..531f9c4 100644
+--- a/ceilometermiddleware/swift.py
++++ b/ceilometermiddleware/swift.py
+@@ -149,7 +149,7 @@ def iter_response(iterable):
+                     yield chunk
+                     chunk = next(iterator)
+             finally:
+-                self.emit_event(env, input_proxy.bytes_received, bytes_sent)
++                self.emit_event(env, input_proxy.bytes_received, bytes_sent, start_response=start_response_args[0])
+ 
+         try:
+             iterable = self._app(env, my_start_response)
+@@ -160,7 +160,7 @@ def iter_response(iterable):
+             return iter_response(iterable)
+ 
+     @_log_and_ignore_error
+-    def emit_event(self, env, bytes_received, bytes_sent, outcome='success'):
++    def emit_event(self, env, bytes_received, bytes_sent, outcome='success', start_response=None):
+         if ((env.get('HTTP_X_SERVICE_PROJECT_ID') or
+                 env.get('HTTP_X_PROJECT_ID') or
+                 env.get('HTTP_X_TENANT_ID')) in self.ignore_projects or
+@@ -212,6 +212,10 @@ def emit_event(self, env, bytes_received, bytes_sent, outcome='success'):
+             if header.upper() in headers:
+                 resource_metadata['http_header_%s' % header] = headers.get(
+                     header.upper())
++            for arg in start_response[1]:
++                h = arg[0].strip().replace('-', '_').lower()
++                if header.upper() in h.upper():
++                    resource_metadata['http_header_%s' % h] = arg[1]
+ 
+         # build object store details
+         target = cadf_resource.Resource(

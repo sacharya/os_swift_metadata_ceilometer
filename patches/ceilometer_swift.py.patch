@@ -1,0 +1,49 @@
+From 0de4c90a972b9bae474bc9c99551d59306c99748 Mon Sep 17 00:00:00 2001
+From: Sudarshan Acharya <sudarshan.acharya@gmail.com>
+Date: Sat, 23 Jul 2016 04:28:07 +0000
+Subject: [PATCH] Update swift pollster to poll for container metadata
+
+Needs additional head call to each container. Inefficient
+for large number of containers.
+---
+ ceilometer/objectstore/swift.py | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/ceilometer/objectstore/swift.py b/ceilometer/objectstore/swift.py
+index 085e99d..f85215d 100644
+--- a/ceilometer/objectstore/swift.py
++++ b/ceilometer/objectstore/swift.py
+@@ -85,6 +85,16 @@ def _iter_accounts(self, ksclient, cache, tenants):
+                 ksclient, tenants))
+         return iter(cache[self.CACHE_KEY_METHOD])
+ 
++    def _iter_accounts_containers(self, ksclient, cache, tenant, container):
++        endpoint = self._get_endpoint(ksclient)
++        if not endpoint:
++            raise StopIteration()
++        api_method = '%s_container' % self.METHOD
++        return (tenant, getattr(swift, api_method)
++                               (self._neaten_url(endpoint, tenant),
++                               keystone_client.get_auth_token(ksclient),
++                               container))
++
+     def _get_account_info(self, ksclient, tenants):
+         endpoint = self._get_endpoint(ksclient)
+         if not endpoint:
+@@ -195,7 +205,8 @@ def get_samples(self, manager, cache, resources):
+                                                    cache, tenants):
+             containers_info = account[1]
+             for container in containers_info:
+-                yield sample.Sample(
++		tenant, container_ = self._iter_accounts_containers(manager.keystone, cache, tenant, container['name'])
++		yield sample.Sample(
+                     name='storage.containers.objects.size',
+                     type=sample.TYPE_GAUGE,
+                     volume=int(container['bytes']),
+@@ -204,5 +215,5 @@ def get_samples(self, manager, cache, resources):
+                     project_id=tenant,
+                     resource_id=tenant + '/' + container['name'],
+                     timestamp=timeutils.utcnow().isoformat(),
+-                    resource_metadata=None,
++                    resource_metadata=container_[0],
+                 )
