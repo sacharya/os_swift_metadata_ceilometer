@@ -1,0 +1,36 @@
+- name: Patch ceilometer-middleware
+  hosts: swift_all:swift_remote_all
+  gather_facts: "{{ gather_facts | default(True) }}"
+  user: root
+  vars:
+    openstack_release: 13.2.0
+  tasks:
+  - name: apply patch to ceilometermiddleware for swift metadata
+    patch: >
+        src=patches/ceilometermiddleware_swift.py.diff
+        dest=/openstack/venvs/swift-{{ openstack_release }}/lib/python2.7/site-packages/ceilometermiddleware/swift.py
+ 
+  - name: Restart swift proxy
+    service:
+      name: swift-proxy-server
+      state: restarted
+      pattern: swift-proxy-server
+    when: inventory_hostname in groups['swift_proxy']
+   
+- name: Patch ceilometer
+  hosts: ceilometer_all
+  gather_facts: "{{ gather_facts | default(True) }}"
+  user: root
+  vars:
+    openstack_release: 13.2.0
+  tasks:
+  - name: apply patch to ceilometer swift poller
+    patch: >
+        src=patches/ceilometer_swift.py.diff
+        dest=/openstack/venvs/ceilometer-{{ openstack_release }}/lib/python2.7/site-packages/ceilometer/objectstore/swift.py
+  - name: Restart ceilometer poller
+    service:
+      name: ceilometer-polling
+      state: restarted
+      pattern: ceilometer-polling
+    when: inventory_hostname in groups['ceilometer_api']

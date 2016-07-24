@@ -1,14 +1,3 @@
-From 7790f4b253f69b11507c945749e76eebc126d7c2 Mon Sep 17 00:00:00 2001
-From: Sudarshan Acharya <sudarshan.acharya@gmail.com>
-Date: Fri, 6 May 2016 04:06:46 +0000
-Subject: [PATCH] Adding response headers to sample metadata
-
-Metadata headers that are in the response header are
-captured and sent as part of the measuremant metadata.
----
- ceilometermiddleware/swift.py | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
 diff --git a/ceilometermiddleware/swift.py b/ceilometermiddleware/swift.py
 index ba2db38..531f9c4 100644
 --- a/ceilometermiddleware/swift.py
