@@ -2,8 +2,8 @@
   hosts: swift_all:swift_remote_all
   gather_facts: "{{ gather_facts | default(True) }}"
   user: root
-  vars:
-    openstack_release: 13.2.0
+  vars_files:
+    - vars.yml
   tasks:
   - name: apply patch to ceilometermiddleware for swift metadata
     patch: >
@@ -21,8 +21,8 @@
   hosts: ceilometer_all
   gather_facts: "{{ gather_facts | default(True) }}"
   user: root
-  vars:
-    openstack_release: 13.2.0
+  vars_files:
+    - vars.yml
   tasks:
   - name: apply patch to ceilometer swift poller
     patch: >
